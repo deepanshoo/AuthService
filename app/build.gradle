@@ -28,6 +28,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 
+    // --- Kafka dependency ---
+    implementation 'org.springframework.kafka:spring-kafka'
+
     // --- Spring Cloud ---
     implementation 'org.springframework.cloud:spring-cloud-starter-bootstrap:4.1.6'
 
@@ -62,5 +65,5 @@ java {
 
 application {
     // Define the main class for the application.
-    mainClass = 'org.example.App'
+    mainClass = 'authservice.App'
 }
