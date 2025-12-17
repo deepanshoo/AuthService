@@ -6,6 +6,7 @@ import authservice.request.RefreshTokenDTO;
 import authservice.response.JwtResponseDTO;
 import authservice.service.JwtService;
 import authservice.service.RefreshTokenService;
+import authservice.service.UserDetailsServiceImplementation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,12 +17,16 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.Objects;
+
 @Controller
 public class TokenController {
     @Autowired
     private AuthenticationManager authenticationManager;
     @Autowired
     private RefreshTokenService refreshTokenService;
+    @Autowired
+    private UserDetailsServiceImplementation userDetailsService;
     @Autowired
     private JwtService jwtService;
 
@@ -30,25 +35,28 @@ public class TokenController {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequestDTO.getUsername(), authRequestDTO.getPassword()));
         if(authentication.isAuthenticated()){
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(authRequestDTO.getUsername());
-            return new ResponseEntity<>(JwtResponseDTO.builder()
-                    .accessToken(jwtService.GenerateToken(authRequestDTO.getUsername()))
-                    .token(refreshToken.getToken())
-                    .build(), HttpStatus.OK);
-        } else{
-            return new ResponseEntity<>("Exception in User Service", HttpStatus.INTERNAL_SERVER_ERROR);
+            String userId = userDetailsService.getUserByUsername(authRequestDTO.getUsername());
+
+            if(Objects.nonNull(userId) && Objects.nonNull(refreshToken)){
+                return new ResponseEntity<>(JwtResponseDTO.builder()
+                        .accessToken(jwtService.GenerateToken(authRequestDTO.getUsername()))
+                        .token(refreshToken.getToken())
+                        .build(), HttpStatus.OK);
+            }
         }
+        return new ResponseEntity<>("Exception in User Service", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @PostMapping("auth/v1/refreshToken")
-    public JwtResponseDTO refreshToken(@RequestBody RefreshTokenDTO refreshTokenDTO){
-        return refreshTokenService.findByToken(refreshTokenDTO.getToken())
+    public JwtResponseDTO refreshToken(@RequestBody RefreshTokenDTO refreshTokenRequestDTO){
+        return refreshTokenService.findByToken(refreshTokenRequestDTO.getToken())
                 .map(refreshTokenService::verifyExpiration)
                 .map(RefreshToken::getUserInfo)
                 .map(userInfo -> {
                     String accessToken = jwtService.GenerateToken(userInfo.getUsername());
-                    return  JwtResponseDTO.builder()
+                    return JwtResponseDTO.builder()
                             .accessToken(accessToken)
-                            .token(refreshTokenDTO.getToken()).build();
-                }).orElseThrow(() -> new RuntimeException("Refresh Token is not in Database..."));
+                            .token(refreshTokenRequestDTO.getToken()).build();
+                }).orElseThrow(() ->new RuntimeException("Refresh Token is not in DB..!!"));
     }
 }

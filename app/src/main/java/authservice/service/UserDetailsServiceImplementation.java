@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -57,10 +58,30 @@ public class UserDetailsServiceImplementation implements UserDetailsService {
             return false;
         }
         String userId= UUID.randomUUID().toString();
-        UserInfo userInfo = new UserInfo(userId, userInfoDto.getUsername(), userInfoDto.getPassword(), new HashSet<>());
+        UserInfo userInfo = new UserInfo();
+        userInfo.setUserId(userId);
+        userInfo.setUsername(userInfoDto.getUsername());
+        userInfo.setPassword(userInfoDto.getPassword());
+//        userInfo.setRoles(new HashSet<>());
         userRepository.save(userInfo);
-        userInfoProducer.sendEventToKafka(userInfoEventToPublish(userInfoDto,userId));
+        System.out.println("=== USER SAVED TO AUTH DB ===");
+        
+        UserInfoEvent event = userInfoEventToPublish(userInfoDto, userId);
+        System.out.println("=== SENDING KAFKA EVENT ===");
+        System.out.println("Event to send: " + event);
+        
+        try {
+            userInfoProducer.sendEventToKafka(event);
+            System.out.println("=== KAFKA EVENT SENT SUCCESSFULLY ===");
+        } catch (Exception e) {
+            System.err.println("=== FAILED TO SEND KAFKA EVENT ===");
+            e.printStackTrace();
+        }
+        
         return true;
+    }
+    public String getUserByUsername(String userName){
+        return Optional.of(userRepository.findByUsername(userName)).map(UserInfo::getUserId).orElse(null);
     }
 
     public Boolean validateUserCredentials(UserInfoDto userInfoDto) {

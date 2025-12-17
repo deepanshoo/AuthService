@@ -1,11 +1,12 @@
-package authservice.auth;
+package authservice.controller;
 
 
+import authservice.auth.JwtAuthFilter;
 import authservice.eventProducer.UserInfoProducer;
 import lombok.Data;
 import authservice.repository.UserRepository;
 import authservice.service.UserDetailsServiceImplementation;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+@Slf4j
 @Configuration
 @EnableMethodSecurity
 @Data

@@ -17,14 +17,18 @@ public class RefreshTokenService {
     RefreshTokenRepository refreshTokenRepository;
     @Autowired
     UserRepository userRepository;
-    public RefreshToken createRefreshToken(String email){
-        UserInfo userInfoExtracted = userRepository.findByUsername(email);
+    public RefreshToken createRefreshToken(String username){
+        UserInfo userInfoExtracted = userRepository.findByUsername(username);
         RefreshToken refreshToken = RefreshToken.builder()
                 .userInfo(userInfoExtracted)
                 .token(UUID.randomUUID().toString())
                 .expiryDate(Instant.now().plusMillis(600000))
                 .build();
         return refreshTokenRepository.save(refreshToken);
+    }
+
+    public Optional<RefreshToken> findByToken(String token){
+        return refreshTokenRepository.findByToken(token);
     }
 
     public RefreshToken verifyExpiration(RefreshToken token){
@@ -35,7 +39,5 @@ public class RefreshTokenService {
         return token;
     }
 
-    public Optional<RefreshToken> findByToken(String token){
-        return refreshTokenRepository.findByToken(token);
-    }
+
 }
